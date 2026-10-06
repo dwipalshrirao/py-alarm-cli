@@ -1,7 +1,7 @@
 # 04 — Scheduler & Ringing — py-alarm-cli
 
 ## 1. Clock & tick
-- `Scheduler(service, ringer, get_now=datetime.now().astimezone, interval=1.0s)` runs as Textual worker (`run_worker`), not a thread — simple + testable.
+- `Scheduler(service, ringer, get_now=..., interval=1.0s)` is owned by `AlarmApp` (injected, default built with `TerminalBellRinger`) and polled via `set_interval(1.0, app.poll_alarms)` — no threads. `poll_alarms()` calls `tick()` and pops one `RingModal` per due alarm (`_ring_open` guard prevents stacking).
 - Each tick (DEBUG log throttled to every 60s to avoid spam): `due = service.due_alarms(now)`.
 - Dedup: alarm already in `ringing` set is not re-fired until dismissed/snoozed.
 

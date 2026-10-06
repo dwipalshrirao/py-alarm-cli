@@ -5,6 +5,7 @@ Single entrypoint `py-alarm` opens this UI. No CLI CRUD flags — everything bel
 ## 1. Layout — `AlarmApp`
 ```
 ┌ py-alarm-cli ──────────────────────┐
+│ 14:05:09                           │  ← live current time (HH:MM:SS, ticks every second)
 │ Time  │ Days      │ Message │ Next │ Status  │
 │ 07:30 │ Mon-Fri   │ Wake up │ 2h15m│ Enabled │
 │ 21:00 │ Everyday  │ Tea     │ 8h   │ Disabled│
@@ -13,6 +14,7 @@ Single entrypoint `py-alarm` opens this UI. No CLI CRUD flags — everything bel
 └────────────────────────────────────┘
 ```
 - Table: Textual `DataTable` (columns above). `Next` = next-ring countdown (`in 2h 15m` / `Tomorrow 07:30`), `Status` = Enabled / Disabled / Ringing / Snoozed.
+- Modals (`AddEditModal`, `ConfirmDelete`, `RingModal` in `tui/screens.py` via `ThemedModal` base): centered `.dialog` (width 60, `$surface` bg, centered title/message, centered button row) with heavy theme-color border — `$primary` add/edit, `$warning` delete, `$error` ring. `SCOPED_CSS = False` so screen-level rules match.
 - Footer: key hints. Toast for errors/confirmations (e.g. "Saved 07:30").
 
 ## 2. Interactions
