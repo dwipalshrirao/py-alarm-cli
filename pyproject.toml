@@ -1,0 +1,23 @@
+[project]
+name = "py-alarm-cli"
+version = "0.1.0"
+description = "Portable Python CLI alarm clock with Textual TUI"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["textual>=3"]
+
+[project.scripts]
+py-alarm = "py_alarm_cli.app:main"
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio", "coverage"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["py_alarm_cli"]

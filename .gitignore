@@ -1,0 +1,12 @@
+env/
+alarms.json
+alarms.json.corrupt-*.bak
+py-alarm-cli.log*
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
