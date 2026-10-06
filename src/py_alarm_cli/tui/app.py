@@ -32,6 +32,7 @@ class AlarmApp(App):
         self.table: DataTable | None = None
         self.clock: Static | None = None
         self._ring_open = False
+        self._ringing_id: str | None = None
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -57,8 +58,13 @@ class AlarmApp(App):
 
     # -- live trigger -------------------------------------------------
     def poll_alarms(self) -> None:
-        """1s tick: ring due alarms via scheduler, pop RingModal (no stacking)."""
+        """1s tick: ring due alarms via scheduler, pop RingModal (no stacking).
+
+        While the modal is open the bell re-rings every tick, so the alarm
+        keeps sounding until the user dismisses or snoozes it.
+        """
         if self._ring_open:
+            self._repeat_ring()
             return
         try:
             due = self.scheduler.tick()
@@ -67,6 +73,19 @@ class AlarmApp(App):
             return
         if due:
             self.show_ring(due[0].id)
+
+    def _repeat_ring(self) -> None:
+        """Re-emit the bell for the currently ringing alarm (best effort)."""
+        if not self._ringing_id:
+            return
+        try:
+            alarm = self.service.get(self._ringing_id)
+        except (KeyError, ValueError):
+            return
+        try:
+            self.scheduler.ringer.ring(alarm)
+        except Exception as exc:  # ringer should never raise; stay quiet regardless
+            LOG.warning("repeat ring failed: %s", exc, extra={"alarm_id": alarm.id})
 
     # -- table --------------------------------------------------------
     def refresh_table(self) -> None:
@@ -162,10 +181,12 @@ class AlarmApp(App):
     def show_ring(self, alarm_id: str) -> None:
         alarm = self.service.get(alarm_id)
         self._ring_open = True
+        self._ringing_id = alarm_id
         self.push_screen(RingModal(alarm.message, alarm.time), lambda action: self._on_ring_result(alarm_id, action))
 
     def _on_ring_result(self, alarm_id: str, action: str | None) -> None:
         self._ring_open = False
+        self._ringing_id = None
         try:
             if action == "snooze":
                 self.service.snooze(alarm_id, minutes=5)

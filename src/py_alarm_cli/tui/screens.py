@@ -27,6 +27,13 @@ ConfirmDelete .dialog {
 }
 RingModal .dialog {
     border: heavy $error;
+    background: $error;
+}
+RingModal .dialog.dialog-alt {
+    background: $surface;
+}
+RingModal .title {
+    color: white;
 }
 ModalScreen .title {
     text-align: center;
@@ -125,6 +132,16 @@ class RingModal(ThemedModal):
         super().__init__()
         self._message = message
         self._time = time
+
+    def on_mount(self) -> None:
+        # Flash the dialog ~2Hz while ringing; timer dies with the screen.
+        self.set_interval(0.5, self._flash)
+
+    def _flash(self) -> None:
+        try:
+            self.query_one(".dialog").toggle_class("dialog-alt")
+        except Exception:
+            pass
 
     def compose(self):
         yield self._dialog(

@@ -16,9 +16,10 @@
    - Windows: `winsound.MessageBeep()` (guarded import).
    - macOS: `afplay /System/Library/Sounds/Glass.aiff` via non-blocking `subprocess.Popen` (short timeout).
    - Linux: `print("\a")` only in v1 (no external player dependency).
-2. TUI opens `RingModal` with `alarm.message` + time.
-3. User `Dismiss (Enter)` → `service.dismiss(id)` (clears snooze, logs `alarm_dismissed`); one-shot alarms stay enabled (simple clock: all alarms repeat daily/days-pattern).
-4. User `Snooze (s)` → `service.snooze(id, minutes=5)` sets `snoozed_until = now + 5m`, logs `alarm_snoozed`, row shows `Snoozed (in 5m)`.
+2. TUI opens `RingModal` with `alarm.message` + time. While open, every 1s `poll_alarms()` re-emits the bell (`_repeat_ring`, single modal, no stacking) — the alarm keeps ringing until the user acts.
+3. User `Dismiss (Enter)` → `service.dismiss(id)` (clears snooze, logs `alarm_dismissed`); fired marker for the minute is kept so it stays silent. One-shot alarms stay enabled (simple clock: all alarms repeat daily/days-pattern).
+4. User `Snooze (s)` → `service.snooze(id, minutes=5)` sets `snoozed_until = now + 5m` + `scheduler.resolve(id)`, logs `alarm_snoozed`, row shows `Snoozed (in 5m)`.
+5. Ring styling: `RingModal .dialog` flashes `$error` ↔ `$surface` at ~2Hz (`_flash` toggles `dialog-alt` every 0.5s; white title for contrast). No `@keyframes` — this Textual version parses keyframes in neither widget nor app CSS.
 
 ## 4. Interface (for OCP + tests)
 ```python

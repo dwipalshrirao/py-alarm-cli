@@ -139,6 +139,61 @@ def _due_app(isolated_cwd):
 
 
 @pytest.mark.asyncio()
+async def test_alarm_keeps_ringing_until_dismissed(isolated_cwd):
+    """Ringing persists: every poll while the modal is open re-emits the bell."""
+    from py_alarm_cli.tui.screens import RingModal
+
+    service, alarm, ringer, app = _due_app(isolated_cwd)
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        app.poll_alarms()
+        await pilot.pause()
+        assert isinstance(app.screen, RingModal)
+        assert ringer.rang == [alarm.id]
+        # Modal still open: further polls repeat the bell, no stacked modals.
+        app.poll_alarms()
+        await pilot.pause()
+        app.poll_alarms()
+        await pilot.pause()
+        assert isinstance(app.screen, RingModal)
+        assert ringer.rang == [alarm.id] * 3
+        # Dismiss stops the ringing.
+        await pilot.click("#dismiss")
+        await pilot.pause()
+        app.poll_alarms()
+        await pilot.pause()
+        assert not isinstance(app.screen, RingModal)
+        assert ringer.rang == [alarm.id] * 3
+
+
+@pytest.mark.asyncio()
+async def test_ring_modal_flashes_while_ringing(isolated_cwd):
+    """Ring popup alternates $error/$surface background so ringing is visible."""
+    from py_alarm_cli.tui.screens import RingModal
+    from textual.app import App
+
+    class T(App):
+        pass
+
+    app = T()
+    async with app.run_test() as pilot:
+        modal = RingModal("Wake up", "07:30")
+        await app.push_screen(modal)
+        await pilot.pause()
+        dialog = modal.query_one(".dialog")
+        bg_ringing = dialog.styles.background
+        modal._flash()
+        await pilot.pause()
+        bg_flashed = dialog.styles.background
+        assert bg_ringing != bg_flashed  # visible flash step
+        modal._flash()
+        await pilot.pause()
+        assert dialog.styles.background == bg_ringing  # toggles back
+        app.pop_screen()
+        await pilot.pause()
+
+
+@pytest.mark.asyncio()
 async def test_bug1_dismissed_modal_does_not_reappear_same_minute(isolated_cwd):
     """Bug 1: after dismiss, the next 1s poll (same minute) must NOT re-pop the modal."""
     from py_alarm_cli.tui.screens import RingModal
